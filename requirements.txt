@@ -1,0 +1,8 @@
+Flask
+requests
+opencv-python
+numpy
+imageio-ffmpeg
+twilio
+python-dotenv
+Flask-CORS
