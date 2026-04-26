@@ -21,7 +21,7 @@ function App() {
     return (
       <div className="loading-screen">
         <div className="loading-container">
-          <div className="loading-logo">EngageVision</div>
+          <div className="loading-logo">LensFort</div>
           <div className="loading-spinner"></div>
           <p>Initializing Security System...</p>
         </div>

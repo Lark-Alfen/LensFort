@@ -9,7 +9,7 @@ export default function Sidebar() {
   return (
     <nav className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
-        <h1 className="logo">EngageVision</h1>
+        <h1 className="logo">LensFort</h1>
         <button 
           className="toggle-btn" 
           onClick={() => setCollapsed(!collapsed)}
@@ -31,7 +31,7 @@ export default function Sidebar() {
       </div>
       
       <div className="sidebar-footer">
-        <p>© 2025 EngageVision</p>
+        <p>© 2025 LensFort</p>
         <div className="system-status">
           <span className="status-dot"></span>
           <span>System Online</span>

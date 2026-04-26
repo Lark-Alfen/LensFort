@@ -1,6 +1,6 @@
-# EngageVision Security System
+# LensFort Security System
 
-EngageVision is a local, camera-based security monitoring application with:
+LensFort is a local, camera-based security monitoring application with:
 
 - A Python backend that handles camera control, person detection, and video lifecycle.
 - A React frontend that provides system control, recordings browsing, playback, download, and deletion.
@@ -80,7 +80,7 @@ At a high level, the system performs these operations:
 ## 4. Repository Structure
 
 ```text
-Python-Security-System/
+LensFort/
   backend/
     .sample.env
     __init__.py
