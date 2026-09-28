@@ -15,3 +15,9 @@ backend/videos/
 temp-test.mp4
 PROJECT_KNOWLEDGE.txt
 design/
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
