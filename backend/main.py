@@ -39,7 +39,7 @@ camera = Camera()
 # Define a route for the root URL
 @app.route('/')
 def index():
-    return "Welcome to the Python Security System!"
+    return "LensFort API is running."
 
 @app.route('/arm', methods=['POST'])
 def arm():
