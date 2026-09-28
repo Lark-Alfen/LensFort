@@ -23,7 +23,7 @@ function App() {
         <div className="loading-container">
           <div className="loading-logo">LensFort</div>
           <div className="loading-spinner"></div>
-          <p>Initializing Security System...</p>
+          <p>Initializing LensFort...</p>
         </div>
       </div>
     );
