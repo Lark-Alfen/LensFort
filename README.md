@@ -110,10 +110,6 @@ LensFort/
       Details.css
       index.js
       index.css
-  design/
-    Sequence Diagram.pdf
-    System Diagram.pdf
-    User Interface Design.pdf
   requirements.txt
   .gitignore
 ```
@@ -224,7 +220,7 @@ Copy `backend/.sample.env` to `backend/.env` and set values:
 
 - Python 3.11+
 - Node.js and npm
-- ffmpeg installed and available on PATH
+- ffmpeg installed and available on PATH (used by `ffmpeg-python` for clip post-processing)
 
 ### Install
 
