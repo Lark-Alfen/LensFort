@@ -55,6 +55,25 @@ def handle_detection(path_to_file):
     thread = threading.Thread(target=action_thread, args=(path_to_file,), daemon=True)
     thread.start()
 
+def recover_pending_clips(temp_directory):
+    """Finalize clips left in the temp directory by a previous run.
+
+    Must only be called before the camera starts recording, otherwise an
+    in-progress clip could be picked up.
+    """
+    if not os.path.isdir(temp_directory):
+        return 0
+
+    pending = [
+        os.path.join(temp_directory, name)
+        for name in os.listdir(temp_directory)
+        if name.endswith('.mp4')
+    ]
+    for path in pending:
+        print(f"Recovering unfinished clip: {os.path.basename(path)}")
+        handle_detection(path)
+    return len(pending)
+
 # Function to list videos within a specific date range
 def list_videos_in_date_range(start_date, end_date):
     videos = []
