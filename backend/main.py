@@ -49,6 +49,16 @@ CORS_ORIGINS = [
 app = Flask(__name__)
 CORS(app, origins=CORS_ORIGINS)
 
+
+@app.before_request
+def require_json_for_writes():
+    # Browsers can send cross-site form/no-cors POSTs without a CORS preflight.
+    # Requiring a JSON content type forces a preflight, which CORS rejects for
+    # foreign origins, so other websites can't arm or disarm the system.
+    if request.method == 'POST' and not request.is_json:
+        return jsonify(error="Content-Type must be application/json"), 415
+
+
 camera = Camera()
 
 # Finalize any clips interrupted by a previous crash before recording starts.
