@@ -20,6 +20,10 @@ def _parse_video_datetime(filename):
 
 def _parse_iso_datetime(value, is_end=False):
     parsed = datetime.fromisoformat(value)
+    # Recording timestamps are naive local times, so convert offset-aware
+    # input (e.g. JavaScript's toISOString() "...Z") to naive local time.
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone().replace(tzinfo=None)
     # Date-only end values are treated as exclusive next day.
     if is_end and len(value) <= 10:
         return parsed + timedelta(days=1)
