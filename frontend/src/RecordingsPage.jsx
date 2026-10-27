@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Log from "./Log";
 import "./RecordingsPage.css";
+import { API_BASE } from "./config";
 
-const API_BASE = "http://127.0.0.1:5000";
 
 const normalizeDate = (value) => {
   const date = new Date(value);
