@@ -15,6 +15,7 @@ PERSON_CONFIDENCE_THRESHOLD = 0.5
 # About 5 seconds of failed reads before treating the camera as lost.
 MAX_CONSECUTIVE_READ_FAILURES = 50
 READ_RETRY_DELAY_SECONDS = 0.1
+DEFAULT_RECORDING_FPS = 20.0
 
 
 class Camera:
@@ -66,6 +67,10 @@ class Camera:
         non_detected_counter = 0
         failed_reads = 0
         current_recording_name = None
+        # Exponential moving average of the processing loop rate. Frames are
+        # written once per loop iteration, so this is the real recording FPS.
+        measured_fps = None
+        last_frame_time = None
 
         self.cap = cv.VideoCapture(0)
         if not self.cap.isOpened():
@@ -87,6 +92,17 @@ class Camera:
                     time.sleep(READ_RETRY_DELAY_SECONDS)
                     continue
                 failed_reads = 0
+
+                frame_time = time.monotonic()
+                if last_frame_time is not None:
+                    interval = frame_time - last_frame_time
+                    if interval > 0:
+                        instant_fps = 1.0 / interval
+                        measured_fps = (
+                            instant_fps if measured_fps is None
+                            else 0.9 * measured_fps + 0.1 * instant_fps
+                        )
+                last_frame_time = frame_time
 
                 blob = cv.dnn.blobFromImage(frame, 0.007843, (300, 300), 127.5)
                 self.net.setInput(blob)
@@ -117,7 +133,7 @@ class Camera:
                         self.out = cv.VideoWriter(
                             current_recording_name,
                             fourcc,
-                            20.0,
+                            self._recording_fps(measured_fps),
                             (frame.shape[1], frame.shape[0]),
                         )
 
@@ -146,6 +162,14 @@ class Camera:
                 self.camera_thread = None
 
             print("Camera released...")
+
+    def _recording_fps(self, measured_fps):
+        fps = measured_fps
+        if not fps and self.cap is not None:
+            fps = self.cap.get(cv.CAP_PROP_FPS)
+        if not fps or fps <= 0:
+            fps = DEFAULT_RECORDING_FPS
+        return max(1.0, min(float(fps), 60.0))
 
     def __del__(self):
         try:
