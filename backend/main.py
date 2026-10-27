@@ -104,11 +104,14 @@ def get_logs():
     if days and not start_date and not end_date:
         try:
             day_offset = int(days)
-            target_date = datetime.now().date() - timedelta(days=day_offset)
-            start_dt = datetime.combine(target_date, datetime.min.time())
-            end_dt = start_dt + timedelta(days=1)
         except ValueError:
-            pass
+            day_offset = -1
+        if day_offset < 0:
+            return jsonify({"error": "days must be a non-negative integer"}), 400
+
+        target_date = datetime.now().date() - timedelta(days=day_offset)
+        start_dt = datetime.combine(target_date, datetime.min.time())
+        end_dt = start_dt + timedelta(days=1)
 
     if start_date:
         try:
@@ -121,6 +124,9 @@ def get_logs():
             end_dt = _parse_iso_datetime(end_date, is_end=True)
         except ValueError:
             return jsonify({"error": "Invalid endDate format"}), 400
+
+    if start_dt and end_dt and start_dt >= end_dt:
+        return jsonify({"error": "startDate must be before endDate"}), 400
 
     logs = []
 
