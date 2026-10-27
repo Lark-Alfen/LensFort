@@ -226,4 +226,8 @@ def delete_recording(filename):
     return jsonify(message="Recording deleted", filename=safe_name), 200
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    # Bind to localhost by default; the API has no authentication. Set
+    # LENSFORT_HOST=0.0.0.0 to deliberately expose it on the local network.
+    host = os.getenv("LENSFORT_HOST", "127.0.0.1")
+    port = int(os.getenv("LENSFORT_PORT", "5000"))
+    app.run(host=host, port=port)
