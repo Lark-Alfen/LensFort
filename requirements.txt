@@ -1,7 +1,8 @@
-Flask
-opencv-python
-numpy
-ffmpeg-python
-twilio
-python-dotenv
-Flask-CORS
+Flask>=3.0,<4
+Flask-CORS>=5.0,<7
+# OpenCV 5 removed cv2.dnn.readNetFromCaffe, which loads the detection model.
+opencv-python>=4.8,<5
+numpy>=1.24,<3
+ffmpeg-python>=0.2,<0.3
+twilio>=9.0,<10
+python-dotenv>=1.0,<2
