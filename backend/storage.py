@@ -2,6 +2,9 @@ import logging
 import os
 import ffmpeg
 import threading
+import time
+from datetime import datetime, timedelta
+from recordings import parse_recording_time
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -73,3 +76,49 @@ def recover_pending_clips(temp_directory):
         logger.info("Recovering unfinished clip %s", os.path.basename(path))
         handle_detection(path)
     return len(pending)
+
+def purge_old_recordings(retention_days, now=None):
+    """Delete recordings whose detection time is older than retention_days.
+
+    Files that don't follow the recording name format are left alone.
+    Returns the number of recordings deleted.
+    """
+    if not retention_days:
+        return 0
+
+    cutoff = (now or datetime.now()) - timedelta(days=retention_days)
+    deleted = 0
+    for filename in os.listdir(LOCAL_DIRECTORY):
+        try:
+            recorded_at = parse_recording_time(filename)
+        except ValueError:
+            continue
+        if recorded_at >= cutoff:
+            continue
+
+        try:
+            os.remove(os.path.join(LOCAL_DIRECTORY, filename))
+            deleted += 1
+        except OSError as exc:
+            logger.warning("Could not delete expired recording %s: %s", filename, exc)
+
+    if deleted:
+        logger.info("Deleted %d recording(s) older than %d days", deleted, retention_days)
+    return deleted
+
+def start_retention_worker(retention_days, interval_seconds=3600):
+    """Purge expired recordings now and then every interval_seconds."""
+    if not retention_days:
+        return None
+
+    def worker():
+        while True:
+            try:
+                purge_old_recordings(retention_days)
+            except Exception:
+                logger.exception("Retention cleanup failed")
+            time.sleep(interval_seconds)
+
+    thread = threading.Thread(target=worker, daemon=True, name="retention")
+    thread.start()
+    return thread
