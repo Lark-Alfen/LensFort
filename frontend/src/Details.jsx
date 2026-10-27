@@ -2,8 +2,8 @@ import ReactPlayer from 'react-player';
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './Details.css';
+import { API_BASE } from './config';
 
-const API_BASE = "http://127.0.0.1:5000";
 
 function Details() {
   const navigate = useNavigate();
