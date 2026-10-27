@@ -36,8 +36,18 @@ def _sanitize_video_filename(filename):
         return None
     return safe_name
 
+# Only the LensFort frontend may call the API from a browser. The API has no
+# authentication, so allowing every origin would let any website arm, disarm
+# or delete recordings.
+DEFAULT_CORS_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000"
+CORS_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("LENSFORT_CORS_ORIGINS", DEFAULT_CORS_ORIGINS).split(",")
+    if origin.strip()
+]
+
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=CORS_ORIGINS)
 
 camera = Camera()
 
