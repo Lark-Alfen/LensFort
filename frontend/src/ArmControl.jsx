@@ -86,7 +86,10 @@ export default function ArmControl({ status, toggleStatus }) {
         },
       });
 
-      if (!response.ok) throw new Error('Failed to update system status');
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || 'Failed to update system status');
+      }
       
       // Success message and animation
       setStatusMessage(systemStatus ? 'System disarmed successfully' : 'System armed and monitoring');
