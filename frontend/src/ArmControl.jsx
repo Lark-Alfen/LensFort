@@ -11,6 +11,12 @@ export default function ArmControl() {
   const [recordingsCount, setRecordingsCount] = useState(0);
   const [lastMotionTime, setLastMotionTime] = useState(null);
   const [cameraStatus, setCameraStatus] = useState('Checking...');
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const clock = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(clock);
+  }, []);
   
   useEffect(() => {
     // Check initial system status and fetch all system data
@@ -113,7 +119,7 @@ export default function ArmControl() {
     <div className="security-dashboard">
       <div className="dashboard-header">
         <h1>Security Control Center</h1>
-        <div className="system-time">{new Date().toLocaleString()}</div>
+        <div className="system-time">{now.toLocaleString()}</div>
       </div>
       
       <div className="control-panels">
