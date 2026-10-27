@@ -5,13 +5,13 @@ import threading
 import time
 from datetime import datetime
 from storage import handle_detection
+from config import CAMERA_INDEX, CONFIDENCE_THRESHOLD, COOLDOWN_FRAMES
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_CONFIG = os.path.join(BASE_DIR, "models", "config.txt")
 MODEL_WEIGHTS = os.path.join(BASE_DIR, "models", "mobilenet_iter_73000.caffemodel")
 PERSON_CLASS_ID = 15
-PERSON_CONFIDENCE_THRESHOLD = 0.5
 # About 5 seconds of failed reads before treating the camera as lost.
 MAX_CONSECUTIVE_READ_FAILURES = 50
 READ_RETRY_DELAY_SECONDS = 0.1
@@ -48,7 +48,7 @@ class Camera:
 
             # Open the device here rather than in the thread so callers learn
             # immediately whether monitoring actually started.
-            cap = cv.VideoCapture(0)
+            cap = cv.VideoCapture(CAMERA_INDEX)
             if not cap.isOpened():
                 cap.release()
                 print("Failed to open camera device.")
@@ -90,7 +90,7 @@ class Camera:
         last_frame_time = None
 
         if self.cap is None:
-            self.cap = cv.VideoCapture(0)
+            self.cap = cv.VideoCapture(CAMERA_INDEX)
         if not self.cap.isOpened():
             print("Failed to open camera device.")
             with self.state_lock:
@@ -131,7 +131,7 @@ class Camera:
                     confidence = float(detections[0, 0, i, 2])
                     idx = int(detections[0, 0, i, 1])
 
-                    if idx == PERSON_CLASS_ID and confidence > PERSON_CONFIDENCE_THRESHOLD:
+                    if idx == PERSON_CLASS_ID and confidence > CONFIDENCE_THRESHOLD:
                         box = detections[0, 0, i, 3:7] * np.array(
                             [frame.shape[1], frame.shape[0], frame.shape[1], frame.shape[0]]
                         )
@@ -161,7 +161,7 @@ class Camera:
                     # dropouts don't cut footage out of the clip.
                     self.out.write(frame)
                     non_detected_counter += 1
-                    if non_detected_counter >= 50:
+                    if non_detected_counter >= COOLDOWN_FRAMES:
                         self.out.release()
                         self.out = None
                         if current_recording_name:
