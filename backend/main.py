@@ -1,5 +1,6 @@
 from camera import Camera
 from notifications import send_notification, NotificationError
+from storage import recover_pending_clips
 from flask_cors import CORS
 from flask import Flask, jsonify, request, send_from_directory
 import os
@@ -35,6 +36,9 @@ app = Flask(__name__)
 CORS(app)
 
 camera = Camera()
+
+# Finalize any clips interrupted by a previous crash before recording starts.
+recover_pending_clips(camera.video_dir)
 
 # Define a route for the root URL
 @app.route('/')
