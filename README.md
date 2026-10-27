@@ -147,7 +147,7 @@ LensFort/
     - `endDate`
     - `days` (legacy)
   - Response:
-    - `{"logs": [{"url": "/local_videos/<file>.mp4", "date": "<iso>"}]}`
+    - `{"logs": [{"filename": "<file>.mp4", "url": "/local_videos/<file>.mp4", "date": "<iso>"}]}`
 
 - `GET /local_videos/<filename>`
   - Streams/serves video for playback.
