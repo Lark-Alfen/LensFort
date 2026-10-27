@@ -47,7 +47,8 @@ def index():
 
 @app.route('/arm', methods=['POST'])
 def arm():
-    camera.arm()
+    if not camera.arm():
+        return jsonify(error="Camera unavailable. Check that it is connected and not in use."), 503
     return jsonify(message="System armed."), 200
 
 @app.route('/disarm', methods=['POST'])

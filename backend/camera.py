@@ -33,17 +33,34 @@ class Camera:
         os.makedirs(self.video_dir, exist_ok=True)
 
     def arm(self):
+        """Arm the system. Returns False if the camera device can't be opened."""
         with self.state_lock:
             if self.armed:
                 print("Camera is already armed.")
-                return
+                return True
 
+            # A previous loop may still be winding down after a disarm; it
+            # keeps its open device, so just flip the flag back on.
+            if self.camera_thread is not None and self.camera_thread.is_alive():
+                self.armed = True
+                print("Camera armed.")
+                return True
+
+            # Open the device here rather than in the thread so callers learn
+            # immediately whether monitoring actually started.
+            cap = cv.VideoCapture(0)
+            if not cap.isOpened():
+                cap.release()
+                print("Failed to open camera device.")
+                return False
+
+            self.cap = cap
             self.armed = True
-            if self.camera_thread is None or not self.camera_thread.is_alive():
-                self.camera_thread = threading.Thread(target=self.run, daemon=True)
-                self.camera_thread.start()
+            self.camera_thread = threading.Thread(target=self.run, daemon=True)
+            self.camera_thread.start()
 
         print("Camera armed.")
+        return True
 
     def disarm(self):
         with self.state_lock:
@@ -72,7 +89,8 @@ class Camera:
         measured_fps = None
         last_frame_time = None
 
-        self.cap = cv.VideoCapture(0)
+        if self.cap is None:
+            self.cap = cv.VideoCapture(0)
         if not self.cap.isOpened():
             print("Failed to open camera device.")
             with self.state_lock:
