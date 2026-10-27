@@ -1,8 +1,11 @@
+import logging
 import os
 import ffmpeg
 import threading
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+logger = logging.getLogger(__name__)
 
 # Define a local directory where videos will be saved
 LOCAL_DIRECTORY = os.path.join(BASE_DIR, 'local_videos')
@@ -28,13 +31,13 @@ def save_locally(path_to_file):
     except (ffmpeg.Error, OSError) as exc:
         # Fall back to preserving the original clip if processing fails.
         # OSError covers a missing ffmpeg executable (FileNotFoundError).
-        print(f"Video processing failed, keeping original clip: {exc}")
+        logger.warning("Video processing failed, keeping original clip: %s", exc)
         if os.path.exists(path_to_file):
             os.replace(path_to_file, local_path)
         if os.path.exists(output_path):
             os.remove(output_path)
 
-    print(f"A new video was saved locally as {local_filename}")
+    logger.info("Saved recording %s", local_filename)
     return local_path  # Return the path to the local video file
 
 def handle_detection(path_to_file):
@@ -45,10 +48,8 @@ def handle_detection(path_to_file):
         # Save the video locally
         local_video_path = save_locally(path_to_file)
 
-        # You can call your local processing or notification functions here
-        # For now, let's print the path to the saved video
-        if local_video_path:
-            print(f"Video saved locally: {local_video_path}")
+        if not local_video_path:
+            logger.warning("Clip %s no longer exists; nothing to save.", path_to_file)
 
     # Run the processing in a separate thread
     thread = threading.Thread(target=action_thread, args=(path_to_file,), daemon=True)
@@ -69,6 +70,6 @@ def recover_pending_clips(temp_directory):
         if name.endswith('.mp4')
     ]
     for path in pending:
-        print(f"Recovering unfinished clip: {os.path.basename(path)}")
+        logger.info("Recovering unfinished clip %s", os.path.basename(path))
         handle_detection(path)
     return len(pending)

@@ -1,3 +1,4 @@
+import logging
 from camera import Camera
 from notifications import send_notification, NotificationError
 from storage import recover_pending_clips
@@ -10,6 +11,13 @@ from datetime import datetime, timedelta
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 VIDEO_DIR = os.path.join(BASE_DIR, 'local_videos')
+
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(
+    level=os.getenv("LENSFORT_LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+)
 
 os.makedirs(VIDEO_DIR, exist_ok=True)
 
@@ -101,7 +109,7 @@ def motion_detected():
     try:
         sent = send_notification(data["url"])
     except NotificationError as exc:
-        print("Failed to send notification:", exc)
+        logger.warning("Failed to send notification: %s", exc)
         return jsonify(error="Failed to send notification"), 502
 
     if not sent:
