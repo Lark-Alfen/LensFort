@@ -31,8 +31,11 @@ def _parse_iso_datetime(value, is_end=False):
 
 
 def _sanitize_video_filename(filename):
+    """Return filename if it is a plain recording name, otherwise None."""
     safe_name = os.path.basename(filename)
-    if not safe_name or safe_name != filename:
+    if not safe_name or safe_name != filename or '\\' in filename:
+        return None
+    if not safe_name.lower().endswith('.mp4'):
         return None
     return safe_name
 
@@ -183,10 +186,14 @@ def get_logs():
 # Serve video files from backend/local_videos directory
 @app.route('/local_videos/<filename>')
 def get_video(filename):
-    file_path = os.path.join(VIDEO_DIR, filename)
+    safe_name = _sanitize_video_filename(filename)
+    if not safe_name:
+        return jsonify(error="Invalid filename"), 400
+
+    file_path = os.path.join(VIDEO_DIR, safe_name)
     if not os.path.exists(file_path):
         return jsonify(error="File not found"), 404
-    return send_from_directory(VIDEO_DIR, filename, mimetype='video/mp4')
+    return send_from_directory(VIDEO_DIR, safe_name, mimetype='video/mp4')
 
 
 @app.route('/download-recording/<path:filename>', methods=['GET'])
