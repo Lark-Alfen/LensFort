@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import './ArmControl.css';
 import { API_BASE } from './config';
 
+const CONNECTION_ERROR = 'Cannot connect to security system';
+
 export default function ArmControl() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [systemStatus, setSystemStatus] = useState(false);
@@ -26,54 +28,47 @@ export default function ArmControl() {
         if (response.ok) {
           const data = await response.json();
           setSystemStatus(data.armed);
-          
+          setStatusMessage((message) =>
+            message === CONNECTION_ERROR ? '' : message
+          );
+
           // If the system is armed, camera is active
           setCameraStatus(data.armed ? 'Active' : 'Standby');
         }
       } catch (error) {
-        setStatusMessage('Cannot connect to security system');
+        setStatusMessage(CONNECTION_ERROR);
         setCameraStatus('Offline');
       }
     };
     
-    // Get recordings count from localStorage (set by RecordingsPage)
-    const storedCount = localStorage.getItem('recordingsCount');
-    if (storedCount) {
-      setRecordingsCount(storedCount);
-    }
-    
-    // Check for most recent recording to determine last motion
+    // Recordings count and last motion are derived from the backend on every
+    // poll, so they stay correct after new detections or deletions.
     const fetchLogs = async () => {
       try {
         const response = await fetch(`${API_BASE}/get-logs`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.logs && data.logs.length > 0) {
-            // Sort logs by date (newest first)
-            const sortedLogs = data.logs.sort((a, b) => 
-              new Date(b.date) - new Date(a.date)
-            );
-            
-            // Set last motion time from most recent recording
-            if (sortedLogs[0] && sortedLogs[0].date) {
-              setLastMotionTime(new Date(sortedLogs[0].date).toLocaleString());
-              
-              // Update recordings count
-              setRecordingsCount(data.logs.length);
-              localStorage.setItem('recordingsCount', data.logs.length);
-            }
-          }
-        }
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const logs = data.logs || [];
+        setRecordingsCount(logs.length);
+
+        // The backend returns newest first; skip entries with unknown dates.
+        const latest = logs.find((log) => !Number.isNaN(new Date(log.date).getTime()));
+        setLastMotionTime(latest ? new Date(latest.date).toLocaleString() : null);
       } catch (error) {
         console.error('Failed to fetch logs:', error);
       }
     };
-    
-    checkStatus();
-    fetchLogs();
-    
-    // Set up interval to check status every 10 seconds
-    const statusInterval = setInterval(checkStatus, 10000);
+
+    const refresh = () => {
+      checkStatus();
+      fetchLogs();
+    };
+
+    refresh();
+
+    // Poll status and recordings every 10 seconds
+    const statusInterval = setInterval(refresh, 10000);
     return () => clearInterval(statusInterval);
   }, []);
 
