@@ -34,3 +34,6 @@ CONFIDENCE_THRESHOLD = _read_number(
 
 # Frames without a person before an open recording is closed.
 COOLDOWN_FRAMES = _read_number("LENSFORT_COOLDOWN_FRAMES", 50, int, minimum=1)
+
+# Delete recordings older than this many days. Unset or 0 keeps them forever.
+RETENTION_DAYS = _read_number("LENSFORT_RETENTION_DAYS", 0, int, minimum=0)
