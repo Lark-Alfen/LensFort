@@ -26,8 +26,10 @@ def save_locally(path_to_file):
         ffmpeg.input(path_to_file).output(output_path, vf='scale=-1:720').overwrite_output().run(quiet=True)
         os.replace(output_path, local_path)
         os.remove(path_to_file)
-    except ffmpeg.Error:
+    except (ffmpeg.Error, OSError) as exc:
         # Fall back to preserving the original clip if processing fails.
+        # OSError covers a missing ffmpeg executable (FileNotFoundError).
+        print(f"Video processing failed, keeping original clip: {exc}")
         if os.path.exists(path_to_file):
             os.replace(path_to_file, local_path)
         if os.path.exists(output_path):
