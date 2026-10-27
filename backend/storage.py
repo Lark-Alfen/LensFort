@@ -15,14 +15,13 @@ def save_locally(path_to_file):
     if not path_to_file or not os.path.exists(path_to_file):
         return None
 
-    # Generate a local file name based on the current date and time
-    now = datetime.now()
-    formatted_now = now.strftime("%d-%m-%y-%H-%M-%S")  # to avoid overwriting
-    local_filename = f"{formatted_now}.mp4"
+    # Keep the temporary clip's name, which records when the detection started
+    # (DD-MM-YY-HH-MM-SS.mp4), so the stored timestamp matches the event.
+    local_filename = os.path.basename(path_to_file)
     local_path = os.path.join(LOCAL_DIRECTORY, local_filename)
-    
+
     # Process the video (resize, etc.) before saving.
-    output_path = local_path.split(".mp4")[0] + "-out.mp4"
+    output_path = os.path.splitext(local_path)[0] + "-out.mp4"
     try:
         ffmpeg.input(path_to_file).output(output_path, vf='scale=-1:720').overwrite_output().run(quiet=True)
         os.replace(output_path, local_path)
