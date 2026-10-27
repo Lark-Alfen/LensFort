@@ -1,7 +1,6 @@
 import os
 import ffmpeg
 import threading
-from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -73,24 +72,3 @@ def recover_pending_clips(temp_directory):
         print(f"Recovering unfinished clip: {os.path.basename(path)}")
         handle_detection(path)
     return len(pending)
-
-# Function to list videos within a specific date range
-def list_videos_in_date_range(start_date, end_date):
-    videos = []
-    # Make sure the directory exists
-    if os.path.exists(LOCAL_DIRECTORY):
-        for filename in os.listdir(LOCAL_DIRECTORY):
-            if filename.endswith('.mp4'):
-                try:
-                    # Parse the filename into a datetime object
-                    video_time = datetime.strptime(filename.split('.')[0], "%d-%m-%y-%H-%M-%S")
-                    
-                    # Check if the video is within the date range
-                    if start_date <= video_time <= end_date:
-                        videos.append({"filename": filename, "url": f"/local_videos/{filename}"})
-                except ValueError:
-                    # If the filename is not in the expected format, skip it
-                    continue
-
-    videos.sort(key=lambda item: item["filename"], reverse=True)
-    return videos

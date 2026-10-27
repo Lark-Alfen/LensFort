@@ -5,6 +5,7 @@ import threading
 import time
 from datetime import datetime
 from storage import handle_detection
+from recordings import recording_filename
 from config import CAMERA_INDEX, CONFIDENCE_THRESHOLD, COOLDOWN_FRAMES
 
 
@@ -143,10 +144,9 @@ class Camera:
                 if person_detected:
                     non_detected_counter = 0
                     if self.out is None:
-                        now = datetime.now()
-                        formatted_now = now.strftime("%d-%m-%y-%H-%M-%S")
-                        print("Person motion detected at", formatted_now)
-                        current_recording_name = os.path.join(self.video_dir, f"{formatted_now}.mp4")
+                        filename = recording_filename(datetime.now())
+                        print("Person motion detected:", filename)
+                        current_recording_name = os.path.join(self.video_dir, filename)
                         fourcc = cv.VideoWriter_fourcc(*"mp4v")
                         self.out = cv.VideoWriter(
                             current_recording_name,
