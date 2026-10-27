@@ -17,7 +17,12 @@ export default function Log({ onClick, url, date }) {
         video.muted = true;
         
         video.addEventListener('loadeddata', () => {
-          video.currentTime = 1; // Get frame a bit into the video
+          // Get a frame a bit into the video, but stay inside short clips.
+          // Seeking is asynchronous, so the frame is captured in 'seeked'.
+          video.currentTime = Math.min(1, (video.duration || 0) / 2);
+        });
+
+        video.addEventListener('seeked', () => {
           const canvas = document.createElement('canvas');
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
@@ -25,7 +30,7 @@ export default function Log({ onClick, url, date }) {
           ctx.drawImage(video, 0, 0);
           setThumbnail(canvas.toDataURL());
           setLoading(false);
-        });
+        }, { once: true });
         
         // Handle error
         video.addEventListener('error', () => {
