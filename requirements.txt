@@ -1,8 +1,6 @@
 Flask
-requests
 opencv-python
 numpy
-imageio-ffmpeg
 ffmpeg-python
 twilio
 python-dotenv
