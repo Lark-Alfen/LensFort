@@ -7,43 +7,55 @@ export default function Log({ onClick, url, date }) {
   const [hovered, setHovered] = useState(false);
 
   useEffect(() => {
-    const generatePreview = async () => {
-      try {
-        if (!url) return;
-        
-        const video = document.createElement('video');
-        video.src = url;
-        video.crossOrigin = 'anonymous';
-        video.muted = true;
-        
-        video.addEventListener('loadeddata', () => {
-          // Get a frame a bit into the video, but stay inside short clips.
-          // Seeking is asynchronous, so the frame is captured in 'seeked'.
-          video.currentTime = Math.min(1, (video.duration || 0) / 2);
-        });
+    if (!url) return undefined;
 
-        video.addEventListener('seeked', () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0);
-          setThumbnail(canvas.toDataURL());
-          setLoading(false);
-        }, { once: true });
-        
-        // Handle error
-        video.addEventListener('error', () => {
-          setLoading(false);
-        });
-        
-      } catch (error) {
-        console.error("Preview generation failed:", error);
-        setLoading(false);
-      }
+    let cancelled = false;
+    const video = document.createElement('video');
+    // Only fetch metadata up front; seeking then loads just the frame we need.
+    video.preload = 'metadata';
+    video.crossOrigin = 'anonymous';
+    video.muted = true;
+
+    const onLoadedMetadata = () => {
+      if (cancelled) return;
+      // Get a frame a bit into the video, but stay inside short clips.
+      // Seeking is asynchronous, so the frame is captured in 'seeked'.
+      video.currentTime = Math.min(1, (video.duration || 0) / 2);
     };
 
-    generatePreview();
+    const onSeeked = () => {
+      if (cancelled) return;
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0);
+        setThumbnail(canvas.toDataURL());
+      } catch (error) {
+        console.error("Preview generation failed:", error);
+      }
+      setLoading(false);
+    };
+
+    const onError = () => {
+      if (!cancelled) setLoading(false);
+    };
+
+    video.addEventListener('loadedmetadata', onLoadedMetadata);
+    video.addEventListener('seeked', onSeeked, { once: true });
+    video.addEventListener('error', onError);
+    video.src = url;
+
+    return () => {
+      cancelled = true;
+      video.removeEventListener('loadedmetadata', onLoadedMetadata);
+      video.removeEventListener('seeked', onSeeked);
+      video.removeEventListener('error', onError);
+      // Clearing the source aborts any in-flight download and frees the decoder.
+      video.removeAttribute('src');
+      video.load();
+    };
   }, [url]);
 
   const formatDate = (isoString) => {
