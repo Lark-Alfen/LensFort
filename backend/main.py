@@ -1,6 +1,7 @@
 from camera import Camera
 from notifications import send_notification, NotificationError
 from storage import recover_pending_clips
+from recordings import parse_recording_time
 from flask_cors import CORS
 from flask import Flask, jsonify, request, send_from_directory
 import os
@@ -11,11 +12,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 VIDEO_DIR = os.path.join(BASE_DIR, 'local_videos')
 
 os.makedirs(VIDEO_DIR, exist_ok=True)
-
-
-def _parse_video_datetime(filename):
-    dt_str = filename.split('.')[0]
-    return datetime.strptime(dt_str, "%d-%m-%y-%H-%M-%S")
 
 
 def _parse_iso_datetime(value, is_end=False):
@@ -157,7 +153,7 @@ def get_logs():
         if filename.endswith('.mp4'):
             try:
                 # Parse filename format: 02-05-25-16-05-07 -> DD-MM-YY-HH-MM-SS
-                dt = _parse_video_datetime(filename)
+                dt = parse_recording_time(filename)
 
                 if start_dt and dt < start_dt:
                     continue
