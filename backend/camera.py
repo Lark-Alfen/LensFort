@@ -2,6 +2,7 @@ import os
 import cv2 as cv
 import numpy as np
 import threading
+import time
 from datetime import datetime
 from storage import handle_detection
 
@@ -11,6 +12,9 @@ MODEL_CONFIG = os.path.join(BASE_DIR, "models", "config.txt")
 MODEL_WEIGHTS = os.path.join(BASE_DIR, "models", "mobilenet_iter_73000.caffemodel")
 PERSON_CLASS_ID = 15
 PERSON_CONFIDENCE_THRESHOLD = 0.5
+# About 5 seconds of failed reads before treating the camera as lost.
+MAX_CONSECUTIVE_READ_FAILURES = 50
+READ_RETRY_DELAY_SECONDS = 0.1
 
 
 class Camera:
@@ -60,6 +64,7 @@ class Camera:
 
     def run(self):
         non_detected_counter = 0
+        failed_reads = 0
         current_recording_name = None
 
         self.cap = cv.VideoCapture(0)
@@ -75,7 +80,13 @@ class Camera:
             while self._is_armed():
                 success, frame = self.cap.read()
                 if not success or frame is None:
+                    failed_reads += 1
+                    if failed_reads >= MAX_CONSECUTIVE_READ_FAILURES:
+                        print("Camera stopped delivering frames; disarming.")
+                        break
+                    time.sleep(READ_RETRY_DELAY_SECONDS)
                     continue
+                failed_reads = 0
 
                 blob = cv.dnn.blobFromImage(frame, 0.007843, (300, 300), 127.5)
                 self.net.setInput(blob)
