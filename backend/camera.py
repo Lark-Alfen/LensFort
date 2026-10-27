@@ -1,3 +1,4 @@
+import logging
 import os
 import cv2 as cv
 import numpy as np
@@ -18,6 +19,8 @@ MAX_CONSECUTIVE_READ_FAILURES = 50
 READ_RETRY_DELAY_SECONDS = 0.1
 DEFAULT_RECORDING_FPS = 20.0
 
+logger = logging.getLogger(__name__)
+
 
 class Camera:
     net = cv.dnn.readNetFromCaffe(MODEL_CONFIG, MODEL_WEIGHTS)
@@ -37,14 +40,14 @@ class Camera:
         """Arm the system. Returns False if the camera device can't be opened."""
         with self.state_lock:
             if self.armed:
-                print("Camera is already armed.")
+                logger.info("Camera is already armed.")
                 return True
 
             # A previous loop may still be winding down after a disarm; it
             # keeps its open device, so just flip the flag back on.
             if self.camera_thread is not None and self.camera_thread.is_alive():
                 self.armed = True
-                print("Camera armed.")
+                logger.info("Camera armed.")
                 return True
 
             # Open the device here rather than in the thread so callers learn
@@ -52,7 +55,7 @@ class Camera:
             cap = cv.VideoCapture(CAMERA_INDEX)
             if not cap.isOpened():
                 cap.release()
-                print("Failed to open camera device.")
+                logger.error("Failed to open camera device %s.", CAMERA_INDEX)
                 return False
 
             self.cap = cap
@@ -60,13 +63,13 @@ class Camera:
             self.camera_thread = threading.Thread(target=self.run, daemon=True)
             self.camera_thread.start()
 
-        print("Camera armed.")
+        logger.info("Camera armed.")
         return True
 
     def disarm(self):
         with self.state_lock:
             if not self.armed:
-                print("Camera is already disarmed.")
+                logger.info("Camera is already disarmed.")
                 return
 
             self.armed = False
@@ -75,7 +78,7 @@ class Camera:
         if camera_thread and camera_thread.is_alive():
             camera_thread.join(timeout=3)
 
-        print("Camera disarmed.")
+        logger.info("Camera disarmed.")
 
     def _is_armed(self):
         with self.state_lock:
@@ -93,20 +96,20 @@ class Camera:
         if self.cap is None:
             self.cap = cv.VideoCapture(CAMERA_INDEX)
         if not self.cap.isOpened():
-            print("Failed to open camera device.")
+            logger.error("Failed to open camera device %s.", CAMERA_INDEX)
             with self.state_lock:
                 self.armed = False
                 self.camera_thread = None
             return
 
-        print("Camera started...")
+        logger.info("Camera started.")
         try:
             while self._is_armed():
                 success, frame = self.cap.read()
                 if not success or frame is None:
                     failed_reads += 1
                     if failed_reads >= MAX_CONSECUTIVE_READ_FAILURES:
-                        print("Camera stopped delivering frames; disarming.")
+                        logger.error("Camera stopped delivering frames; disarming.")
                         break
                     time.sleep(READ_RETRY_DELAY_SECONDS)
                     continue
@@ -145,7 +148,7 @@ class Camera:
                     non_detected_counter = 0
                     if self.out is None:
                         filename = recording_filename(datetime.now())
-                        print("Person motion detected:", filename)
+                        logger.info("Person detected, recording %s", filename)
                         current_recording_name = os.path.join(self.video_dir, filename)
                         fourcc = cv.VideoWriter_fourcc(*"mp4v")
                         self.out = cv.VideoWriter(
@@ -182,7 +185,7 @@ class Camera:
                 self.armed = False
                 self.camera_thread = None
 
-            print("Camera released...")
+            logger.info("Camera released.")
 
     def _recording_fps(self, measured_fps):
         fps = measured_fps
