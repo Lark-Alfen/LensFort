@@ -62,8 +62,6 @@ export default function RecordingsPage() {
       const data = await response.json();
 
       if (data.logs) {
-        // Store the total recordings count in localStorage.
-        localStorage.setItem("recordingsCount", data.logs.length.toString());
         setAllLogs(data.logs || []);
         return data.logs;
       }
