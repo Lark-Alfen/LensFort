@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import './ArmControl.css';
 import { API_BASE } from './config';
 
-export default function ArmControl({ status, toggleStatus }) {
+export default function ArmControl() {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [systemStatus, setSystemStatus] = useState(status);
+  const [systemStatus, setSystemStatus] = useState(false);
   const [lastActivated, setLastActivated] = useState(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [animateStatus, setAnimateStatus] = useState(false);
@@ -99,7 +99,6 @@ export default function ArmControl({ status, toggleStatus }) {
       // Update camera status based on armed status
       setCameraStatus(armedData.armed ? 'Active' : 'Standby');
       setLastActivated(new Date().toLocaleTimeString());
-      toggleStatus();
 
     } catch (error) {
       console.error('SECURITY PROTOCOL FAILURE:', error);
