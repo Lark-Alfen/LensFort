@@ -138,9 +138,12 @@ class Camera:
                         )
 
                     self.out.write(frame)
-                else:
+                elif self.out is not None:
+                    # Keep recording through the cooldown so brief detection
+                    # dropouts don't cut footage out of the clip.
+                    self.out.write(frame)
                     non_detected_counter += 1
-                    if non_detected_counter >= 50 and self.out is not None:
+                    if non_detected_counter >= 50:
                         self.out.release()
                         self.out = None
                         if current_recording_name:
