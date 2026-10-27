@@ -1,5 +1,5 @@
 from camera import Camera
-from notifications import send_notification
+from notifications import send_notification, NotificationError
 from flask_cors import CORS
 from flask import Flask, jsonify, request, send_from_directory
 import os
@@ -65,15 +65,21 @@ def camera_status():
 
 @app.route('/motion_detected', methods=['POST'])
 def motion_detected():
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
 
-    if 'url' in data and data['url']:
-        print("URL: ", data['url'])
-        send_notification(data["url"])
-    else:
-        print("'url' not in incoming data")
+    if not data.get('url'):
+        return jsonify(error="'url' is required"), 400
 
-    return jsonify({}), 201
+    try:
+        sent = send_notification(data["url"])
+    except NotificationError as exc:
+        print("Failed to send notification:", exc)
+        return jsonify(error="Failed to send notification"), 502
+
+    if not sent:
+        return jsonify(message="Notifications are not configured; skipped."), 200
+
+    return jsonify(message="Notification sent."), 201
 
 
 @app.route("/get-logs")
