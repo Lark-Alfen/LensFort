@@ -179,6 +179,7 @@ def get_logs():
                 date = "Unknown"
 
             logs.append({
+                "filename": filename,
                 "url": f"/local_videos/{filename}",
                 "date": date
             })
