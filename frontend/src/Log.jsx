@@ -78,12 +78,29 @@ export default function Log({ onClick, url, date }) {
   };
 
   const formattedDate = formatDate(date);
+  const open = () => onClick && onClick(url, date);
+
+  // The card contains block elements, so it can't be a <button>; give it
+  // button semantics and keyboard activation instead.
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      open();
+    }
+  };
+
   return (
-    <div 
+    <div
       className="recording-card"
-      onClick={() => onClick && onClick(url, date)}
+      role="button"
+      tabIndex={0}
+      aria-label={`Open recording from ${formattedDate.date} at ${formattedDate.time}`}
+      onClick={open}
+      onKeyDown={handleKeyDown}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={() => setHovered(false)}
     >
       <div className="thumbnail-container">
         {loading ? (

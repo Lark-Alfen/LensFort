@@ -39,6 +39,8 @@
 }
 
 .date-display {
+  font-family: inherit;
+  text-align: left;
   width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -126,6 +128,13 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+.date-display:focus-visible,
+.month-nav:focus-visible,
+.calendar-day:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .calendar-days-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -146,6 +155,12 @@
 }
 
 .calendar-day {
+  /* Reset native button styles so days look the same as before. */
+  background: none;
+  border: none;
+  color: inherit;
+  font-family: inherit;
+  padding: 0;
   position: relative;
   display: flex;
   align-items: center;
