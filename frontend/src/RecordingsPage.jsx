@@ -127,9 +127,17 @@ export default function RecordingsPage() {
       }
     };
 
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setCalendarOpen(false);
+      }
+    };
+
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
     };
   }, []);
 
@@ -252,7 +260,13 @@ export default function RecordingsPage() {
 
       <div className="recordings-controls">
         <div className="calendar-picker" ref={calendarRef}>
-          <div className="date-display" onClick={toggleCalendar}>
+          <button
+            type="button"
+            className="date-display"
+            onClick={toggleCalendar}
+            aria-haspopup="dialog"
+            aria-expanded={calendarOpen}
+          >
             <span className="calendar-icon" aria-hidden="true"></span>
             <span className="selected-date">
               {selectedDate.toLocaleDateString(undefined, {
@@ -262,15 +276,17 @@ export default function RecordingsPage() {
                 day: "numeric",
               })}
             </span>
-            <span className="dropdown-icon">{calendarOpen ? "▲" : "▼"}</span>
-          </div>
+            <span className="dropdown-icon" aria-hidden="true">{calendarOpen ? "▲" : "▼"}</span>
+          </button>
 
           {calendarOpen && (
-            <div className="calendar-dropdown">
+            <div className="calendar-dropdown" role="dialog" aria-label="Choose a date">
               <div className="calendar-header">
                 <button
+                  type="button"
                   className="month-nav"
                   onClick={() => moveCalendarMonth(-1)}
+                  aria-label="Previous month"
                 >
                   &laquo;
                 </button>
@@ -281,8 +297,10 @@ export default function RecordingsPage() {
                   })}
                 </h3>
                 <button
+                  type="button"
                   className="month-nav"
                   onClick={() => moveCalendarMonth(1)}
+                  aria-label="Next month"
                 >
                   &raquo;
                 </button>
@@ -297,20 +315,42 @@ export default function RecordingsPage() {
               </div>
 
               <div className="calendar-days">
-                {generateCalendarDays().map((day, index) => (
-                  <div
-                    key={`${day.day}-${index}`}
-                    className={`calendar-day ${!day.isCurrentMonth ? "outside-month" : ""} ${
-                      day.isToday ? "today" : ""
-                    } ${day.isSelected ? "selected" : ""} ${
-                      day.hasRecordings ? "has-recordings" : ""
-                    }`}
-                    onClick={() => selectDay(day)}
-                  >
-                    {day.day}
-                    {day.hasRecordings && <span className="recording-dot"></span>}
-                  </div>
-                ))}
+                {generateCalendarDays().map((day, index) => {
+                  const className = `calendar-day ${!day.isCurrentMonth ? "outside-month" : ""} ${
+                    day.isToday ? "today" : ""
+                  } ${day.isSelected ? "selected" : ""} ${
+                    day.hasRecordings ? "has-recordings" : ""
+                  }`;
+
+                  // Padding cells before the 1st aren't selectable.
+                  if (!day.isCurrentMonth) {
+                    return <div key={`empty-${index}`} className={className} />;
+                  }
+
+                  const dayDate = new Date(
+                    calendarViewDate.getFullYear(),
+                    calendarViewDate.getMonth(),
+                    day.day
+                  );
+
+                  return (
+                    <button
+                      type="button"
+                      key={`${day.day}-${index}`}
+                      className={className}
+                      onClick={() => selectDay(day)}
+                      aria-pressed={day.isSelected}
+                      aria-label={`${dayDate.toDateString()}${
+                        day.hasRecordings ? ", has recordings" : ""
+                      }`}
+                    >
+                      {day.day}
+                      {day.hasRecordings && (
+                        <span className="recording-dot" aria-hidden="true"></span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
