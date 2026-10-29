@@ -16,8 +16,23 @@ const isSameDay = (a, b) =>
   a.getMonth() === b.getMonth() &&
   a.getDate() === b.getDate();
 
+// Recordings from the given day, by local time.
+const filterLogsForSelectedDate = (items, date) => {
+  const targetDate = normalizeDate(date);
+
+  const nextDay = new Date(targetDate);
+  nextDay.setDate(nextDay.getDate() + 1);
+
+  return items.filter((log) => {
+    const logDate = new Date(log.date);
+    if (Number.isNaN(logDate.getTime())) {
+      return false;
+    }
+    return logDate >= targetDate && logDate < nextDay;
+  });
+};
+
 export default function RecordingsPage() {
-  const [logs, setLogs] = useState([]);
   const [allLogs, setAllLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -57,69 +72,43 @@ export default function RecordingsPage() {
     return grouped;
   };
 
-  // Fetch all logs. Throws on network or HTTP errors so the caller can show
-  // an error instead of an empty list.
-  const fetchAllLogs = async () => {
-    const response = await fetch(`${API_BASE}/get-logs`);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-    const items = data.logs || [];
-    setAllLogs(items);
-    return items;
-  };
-
-  // Filter logs for the selected date.
-  const filterLogsForSelectedDate = (items, date) => {
-    const targetDate = new Date(date);
-    targetDate.setHours(0, 0, 0, 0);
-
-    const nextDay = new Date(targetDate);
-    nextDay.setDate(nextDay.getDate() + 1);
-
-    return items.filter((log) => {
-      try {
-        const logDate = new Date(log.date);
-        if (Number.isNaN(logDate.getTime())) {
-          return false;
-        }
-        return logDate >= targetDate && logDate < nextDay;
-      } catch {
-        return false;
-      }
-    });
-  };
-
+  // Fetch the full list once (and again on retry). Date and view changes are
+  // filtered locally from allLogs, so they don't refetch.
   useEffect(() => {
+    let cancelled = false;
+
     const loadData = async () => {
       setLoading(true);
       try {
-        // Always fetch all logs to have them ready and for the count.
-        const allLogsData = await fetchAllLogs();
-
-        // If we're in daily view, filter logs for the selected date.
-        if (viewMode === "daily") {
-          const dailyLogs = filterLogsForSelectedDate(allLogsData, selectedDate);
-          setLogs(dailyLogs);
-        } else {
-          // In "all" view, use all the logs.
-          setLogs(allLogsData);
+        const response = await fetch(`${API_BASE}/get-logs`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
         }
+
+        const data = await response.json();
+        if (cancelled) return;
+        setAllLogs(data.logs || []);
         setLoadError("");
       } catch (error) {
+        if (cancelled) return;
         console.error("Failed to load recordings:", error);
         setAllLogs([]);
-        setLogs([]);
         setLoadError("Couldn't load recordings. Check that the LensFort backend is running.");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     loadData();
-  }, [selectedDate, viewMode, reloadKey]);
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
+
+  const logs = useMemo(
+    () => (viewMode === "daily" ? filterLogsForSelectedDate(allLogs, selectedDate) : allLogs),
+    [allLogs, selectedDate, viewMode]
+  );
 
   useEffect(() => {
     const handleClickOutside = (event) => {
