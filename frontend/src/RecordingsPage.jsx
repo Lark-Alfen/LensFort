@@ -20,6 +20,8 @@ export default function RecordingsPage() {
   const [logs, setLogs] = useState([]);
   const [allLogs, setAllLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
   const [selectedDate, setSelectedDate] = useState(() => normalizeDate(new Date()));
   const [calendarViewDate, setCalendarViewDate] = useState(() => normalizeDate(new Date()));
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -55,22 +57,18 @@ export default function RecordingsPage() {
     return grouped;
   };
 
-  // Function to fetch all logs.
+  // Fetch all logs. Throws on network or HTTP errors so the caller can show
+  // an error instead of an empty list.
   const fetchAllLogs = async () => {
-    try {
-      const response = await fetch(`${API_BASE}/get-logs`);
-      const data = await response.json();
-
-      if (data.logs) {
-        setAllLogs(data.logs || []);
-        return data.logs;
-      }
-      return [];
-    } catch (error) {
-      console.error("Failed to fetch all logs:", error);
-      setAllLogs([]);
-      return [];
+    const response = await fetch(`${API_BASE}/get-logs`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
     }
+
+    const data = await response.json();
+    const items = data.logs || [];
+    setAllLogs(items);
+    return items;
   };
 
   // Filter logs for the selected date.
@@ -109,16 +107,19 @@ export default function RecordingsPage() {
           // In "all" view, use all the logs.
           setLogs(allLogsData);
         }
+        setLoadError("");
       } catch (error) {
-        console.error("Database connection failed:", error);
+        console.error("Failed to load recordings:", error);
+        setAllLogs([]);
         setLogs([]);
+        setLoadError("Couldn't load recordings. Check that the LensFort backend is running.");
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [selectedDate, viewMode]);
+  }, [selectedDate, viewMode, reloadKey]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -408,6 +409,18 @@ export default function RecordingsPage() {
         <div className="loading-container">
           <div className="loader-spinner"></div>
           <p>Loading recordings...</p>
+        </div>
+      ) : loadError ? (
+        <div className="no-recordings load-error" role="alert">
+          <h3>Recordings unavailable</h3>
+          <p>{loadError}</p>
+          <button
+            type="button"
+            className="retry-btn"
+            onClick={() => setReloadKey((key) => key + 1)}
+          >
+            Retry
+          </button>
         </div>
       ) : (
         <>

@@ -349,6 +349,27 @@
   color: var(--gray);
 }
 
+.load-error h3 {
+  color: var(--danger);
+}
+
+.retry-btn {
+  margin-top: 1.25rem;
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--border-radius);
+  font-family: inherit;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.retry-btn:hover {
+  background: var(--primary);
+  color: white;
+}
+
 /* View mode toggle */
 .view-mode-toggle {
   display: flex;
