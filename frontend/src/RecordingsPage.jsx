@@ -16,6 +16,13 @@ const isSameDay = (a, b) =>
   a.getMonth() === b.getMonth() &&
   a.getDate() === b.getDate();
 
+// Group keys are local "YYYY-MM-DD" strings. new Date(key) would parse them as
+// UTC midnight, which is the previous day west of UTC, so build a local date.
+const parseDateKey = (key) => {
+  const [year, month, day] = key.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
 // Recordings from the given day, by local time.
 const filterLogsForSelectedDate = (items, date) => {
   const targetDate = normalizeDate(date);
@@ -431,7 +438,7 @@ export default function RecordingsPage() {
                     <div className="date-badge">
                       {date === "unknown"
                         ? "Unknown Date"
-                        : new Date(date).toLocaleDateString("en-US", {
+                        : parseDateKey(date).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
                           })}
