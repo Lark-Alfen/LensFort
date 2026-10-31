@@ -1,6 +1,6 @@
 import ReactPlayer from 'react-player';
-import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import './Details.css';
 import { API_BASE } from './config';
 
@@ -8,12 +8,16 @@ import { API_BASE } from './config';
 function Details() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { state } = location;
-  
-  // Fallback to empty values if state is missing
-  const url = state?.url || '';
-  const date = state?.date || 'Unknown timestamp';
-  
+  const [searchParams] = useSearchParams();
+
+  // The recording is identified in the URL (?file=...), so the page works on
+  // refresh and from shared links. The date may come from router state.
+  const recordingFilename = searchParams.get('file') || '';
+  const url = recordingFilename
+    ? `${API_BASE}/local_videos/${encodeURIComponent(recordingFilename)}`
+    : '';
+  const [date, setDate] = useState(location.state?.date || null);
+
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -22,21 +26,30 @@ function Details() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [actionError, setActionError] = useState('');
 
-  const getFilenameFromUrl = (videoUrl) => {
-    if (!videoUrl) {
-      return '';
-    }
+  // Opened directly (refresh or link): look up the recording's date.
+  useEffect(() => {
+    if (date || !recordingFilename) return undefined;
 
-    try {
-      const parsed = new URL(videoUrl);
-      return parsed.pathname.split('/').pop() || '';
-    } catch {
-      return (videoUrl.split('/').pop() || '').split('?')[0];
-    }
-  };
+    let cancelled = false;
+    const loadDate = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/get-logs`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        const match = (data.logs || []).find((log) => log.filename === recordingFilename);
+        if (!cancelled) setDate(match?.date || 'Unknown');
+      } catch (error) {
+        console.error('Failed to load recording date:', error);
+        if (!cancelled) setDate('Unknown');
+      }
+    };
 
-  const recordingFilename = getFilenameFromUrl(url);
-  
+    loadDate();
+    return () => {
+      cancelled = true;
+    };
+  }, [date, recordingFilename]);
+
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -48,8 +61,15 @@ function Details() {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) {
+      return 'Loading...';
+    }
+
     try {
       const date = new Date(dateString);
+      if (Number.isNaN(date.getTime())) {
+        return 'Unknown Date';
+      }
       return date.toLocaleString(undefined, {
         weekday: 'long',
         year: 'numeric',

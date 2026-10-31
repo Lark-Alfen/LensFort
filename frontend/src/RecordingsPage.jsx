@@ -460,8 +460,10 @@ export default function RecordingsPage() {
                         key={`${log.url}-${i}`}
                         url={`${API_BASE}${log.url}`}
                         date={log.date}
-                        onClick={(url, dateValue) =>
-                          navigate("/details", { state: { url, date: dateValue } })
+                        onClick={() =>
+                          navigate(`/details?file=${encodeURIComponent(log.filename)}`, {
+                            state: { date: log.date },
+                          })
                         }
                       />
                     ))}
