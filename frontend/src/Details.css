@@ -111,6 +111,12 @@
   color: var(--primary);
 }
 
+.media-control-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+  color: var(--text);
+}
+
 .media-icon {
   display: inline-block;
   position: relative;

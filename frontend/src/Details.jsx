@@ -60,6 +60,9 @@ function Details() {
     setProgress(state.playedSeconds);
   };
 
+  // Duration is 0 until metadata loads; avoid a NaN width.
+  const progressPercent = duration > 0 ? Math.min(100, (progress / duration) * 100) : 0;
+
   const formatDate = (dateString) => {
     if (!dateString) {
       return 'Loading...';
@@ -184,6 +187,11 @@ function Details() {
                 volume={volume}
                 onProgress={handleProgress}
                 onDuration={setDuration}
+                // Keep the custom button in sync when the native controls are
+                // used or the clip finishes.
+                onPlay={() => setPlaying(true)}
+                onPause={() => setPlaying(false)}
+                onEnded={() => setPlaying(false)}
                 config={{
                   file: {
                     attributes: {
@@ -202,9 +210,12 @@ function Details() {
           
           <div className="custom-controls">
             <div className="play-controls">
-              <button 
+              <button
+                type="button"
                 className="media-control-button"
                 onClick={() => setPlaying(!playing)}
+                disabled={!url}
+                aria-label={playing ? 'Pause' : 'Play'}
               >
                 <span className={`media-icon ${playing ? 'pause' : 'play'}`} aria-hidden="true"></span>
               </button>
@@ -212,7 +223,7 @@ function Details() {
               <div className="progress-container">
                 <div 
                   className="progress-bar" 
-                  style={{width: `${(progress / duration) * 100}%`}}
+                  style={{width: `${progressPercent}%`}}
                 ></div>
               </div>
               
@@ -231,6 +242,7 @@ function Details() {
                 value={volume}
                 onChange={(e) => setVolume(parseFloat(e.target.value))}
                 className="volume-slider"
+                aria-label="Volume"
               />
             </div>
           </div>
