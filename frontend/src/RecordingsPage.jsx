@@ -150,6 +150,7 @@ export default function RecordingsPage() {
     const daysInMonth = getDaysInMonth(year, month);
     const firstDayOfMonth = getFirstDayOfMonth(year, month);
 
+    const today = normalizeDate(new Date());
     const days = [];
 
     // Add empty slots for days before the first of the month
@@ -176,7 +177,9 @@ export default function RecordingsPage() {
       days.push({
         day: i,
         isCurrentMonth: true,
-        isToday: isSameDay(normalizeDate(new Date()), dayDate),
+        isToday: isSameDay(today, dayDate),
+        // There can't be recordings in the future, so those days are disabled.
+        isFuture: dayDate > today,
         isSelected: isSameDay(selectedDate, dayDate),
         hasRecordings,
       });
@@ -212,7 +215,7 @@ export default function RecordingsPage() {
   };
 
   const selectDay = (day) => {
-    if (!day.isCurrentMonth) {
+    if (!day.isCurrentMonth || day.isFuture) {
       return;
     }
 
@@ -243,6 +246,11 @@ export default function RecordingsPage() {
   };
 
   const selectedDateIsToday = isSameDay(selectedDate, normalizeDate(new Date()));
+
+  const currentMonth = new Date();
+  const calendarShowsCurrentMonth =
+    calendarViewDate.getFullYear() * 12 + calendarViewDate.getMonth() >=
+    currentMonth.getFullYear() * 12 + currentMonth.getMonth();
 
   return (
     <div className="recordings-container">
@@ -297,6 +305,7 @@ export default function RecordingsPage() {
                   type="button"
                   className="month-nav"
                   onClick={() => moveCalendarMonth(1)}
+                  disabled={calendarShowsCurrentMonth}
                   aria-label="Next month"
                 >
                   &raquo;
@@ -317,7 +326,7 @@ export default function RecordingsPage() {
                     day.isToday ? "today" : ""
                   } ${day.isSelected ? "selected" : ""} ${
                     day.hasRecordings ? "has-recordings" : ""
-                  }`;
+                  } ${day.isFuture ? "disabled" : ""}`;
 
                   // Padding cells before the 1st aren't selectable.
                   if (!day.isCurrentMonth) {
@@ -336,6 +345,7 @@ export default function RecordingsPage() {
                       key={`${day.day}-${index}`}
                       className={className}
                       onClick={() => selectDay(day)}
+                      disabled={day.isFuture}
                       aria-pressed={day.isSelected}
                       aria-label={`${dayDate.toDateString()}${
                         day.hasRecordings ? ", has recordings" : ""

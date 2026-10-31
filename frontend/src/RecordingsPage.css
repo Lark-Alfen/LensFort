@@ -181,6 +181,19 @@
   cursor: default;
 }
 
+.calendar-day.disabled,
+.calendar-day.disabled:hover {
+  opacity: 0.35;
+  background: none;
+  cursor: default;
+}
+
+.month-nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+  background: none;
+}
+
 .calendar-day.today {
   color: var(--primary);
   font-weight: bold;
