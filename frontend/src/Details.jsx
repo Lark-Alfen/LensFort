@@ -89,9 +89,7 @@ function Details() {
 
   const handleDownload = async () => {
     if (!recordingFilename) {
-      const msg = 'No recording file available to download.';
-      setActionError(msg);
-      alert(msg);
+      setActionError('No recording file available to download.');
       return;
     }
 
@@ -119,9 +117,7 @@ function Details() {
       link.remove();
     } catch (error) {
       console.error('Download recording error:', error);
-      const msg = error.message || 'Download failed.';
-      setActionError(msg);
-      alert(msg);
+      setActionError(error.message || 'Download failed.');
     } finally {
       setIsDownloading(false);
     }
@@ -129,9 +125,7 @@ function Details() {
 
   const handleDelete = async () => {
     if (!recordingFilename) {
-      const msg = 'No recording file available to delete.';
-      setActionError(msg);
-      alert(msg);
+      setActionError('No recording file available to delete.');
       return;
     }
 
@@ -155,9 +149,7 @@ function Details() {
       navigate('/recordings');
     } catch (error) {
       console.error('Delete recording error:', error);
-      const msg = error.message || 'Delete failed.';
-      setActionError(msg);
-      alert(msg);
+      setActionError(error.message || 'Delete failed.');
     } finally {
       setIsDeleting(false);
     }
@@ -291,7 +283,9 @@ function Details() {
             >
               {isDeleting ? 'Deleting...' : 'Delete Recording'}
             </button>
-            {actionError && <p className="action-error">{actionError}</p>}
+            {actionError && (
+              <p className="action-error" role="alert">{actionError}</p>
+            )}
           </div>
         </div>
       </div>
