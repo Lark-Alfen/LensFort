@@ -97,23 +97,26 @@ function Details() {
 
     setActionError('');
     setIsDownloading(true);
+    const downloadUrl = `${API_BASE}/download-recording/${encodeURIComponent(recordingFilename)}`;
     try {
-      const response = await fetch(
-        `${API_BASE}/download-recording/${encodeURIComponent(recordingFilename)}`
-      );
+      // Check the file is there first; a failed link click would navigate
+      // to the backend's JSON error instead of showing it here.
+      const response = await fetch(downloadUrl, { method: 'HEAD' });
       if (!response.ok) {
-        throw new Error('Download failed.');
+        throw new Error(
+          response.status === 404 ? 'Recording no longer exists.' : 'Download failed.'
+        );
       }
 
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
+      // The backend sends Content-Disposition: attachment, so the browser
+      // streams the file to disk with its own download progress instead of
+      // buffering the whole video in memory.
       const link = document.createElement('a');
-      link.href = blobUrl;
+      link.href = downloadUrl;
       link.download = recordingFilename;
       document.body.appendChild(link);
       link.click();
       link.remove();
-      window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error('Download recording error:', error);
       const msg = error.message || 'Download failed.';
