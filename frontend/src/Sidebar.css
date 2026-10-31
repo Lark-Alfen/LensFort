@@ -166,6 +166,16 @@
   animation: pulse 2s infinite;
 }
 
+.status-dot.pending {
+  background: var(--gray);
+  animation: none;
+}
+
+.status-dot.offline {
+  background: var(--danger);
+  animation: none;
+}
+
 @media (max-width: 768px) {
   .sidebar {
     width: 100%;
