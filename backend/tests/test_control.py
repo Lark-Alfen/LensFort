@@ -56,3 +56,14 @@ def test_motion_detected_reports_send_failure(client, monkeypatch):
     monkeypatch.setattr(main, "send_notification", fail)
 
     assert client.post("/motion_detected", json={"url": "x"}).status_code == 502
+
+
+def test_send_notification_skipped_without_credentials(monkeypatch):
+    monkeypatch.setattr(notifications, "ACCOUNT_SID", None)
+
+    def no_client():
+        raise AssertionError("Twilio client should not be created")
+
+    monkeypatch.setattr(notifications, "_get_client", no_client)
+
+    assert notifications.send_notification("x") is False

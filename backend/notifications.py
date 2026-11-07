@@ -1,16 +1,13 @@
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioException
-import os
-from dotenv import load_dotenv
 from datetime import datetime
 
-load_dotenv()
-
-ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
-AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-
-SENDER = os.getenv("TWILIO_SEND_NUMBER")
-RECEIVER = os.getenv("TWILIO_RECEIVE_NUMBER")
+from config import (
+    TWILIO_ACCOUNT_SID as ACCOUNT_SID,
+    TWILIO_AUTH_TOKEN as AUTH_TOKEN,
+    TWILIO_RECEIVE_NUMBER as RECEIVER,
+    TWILIO_SEND_NUMBER as SENDER,
+)
 
 _client = None
 

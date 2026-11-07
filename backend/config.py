@@ -65,3 +65,9 @@ COOLDOWN_FRAMES = _read_number("LENSFORT_COOLDOWN_FRAMES", 50, int, minimum=1)
 
 # Delete recordings older than this many days. Unset or 0 keeps them forever.
 RETENTION_DAYS = _read_number("LENSFORT_RETENTION_DAYS", 0, int, minimum=0)
+
+# Twilio credentials for SMS alerts. Alerts are skipped unless all four are set.
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID") or None
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN") or None
+TWILIO_SEND_NUMBER = os.getenv("TWILIO_SEND_NUMBER") or None
+TWILIO_RECEIVE_NUMBER = os.getenv("TWILIO_RECEIVE_NUMBER") or None
