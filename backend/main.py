@@ -2,7 +2,7 @@ import logging
 from camera import Camera
 from notifications import send_notification, NotificationError
 from storage import recover_pending_clips, start_retention_worker
-from config import RETENTION_DAYS
+from config import CORS_ORIGINS, HOST, LOG_LEVEL, PORT, RETENTION_DAYS
 from recordings import parse_recording_time
 from flask_cors import CORS
 from flask import Flask, jsonify, request, send_from_directory
@@ -15,7 +15,7 @@ VIDEO_DIR = os.path.join(BASE_DIR, 'local_videos')
 logger = logging.getLogger(__name__)
 
 logging.basicConfig(
-    level=os.getenv("LENSFORT_LOG_LEVEL", "INFO").upper(),
+    level=LOG_LEVEL,
     format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
 )
 
@@ -45,14 +45,7 @@ def _sanitize_video_filename(filename):
 
 # Only the LensFort frontend may call the API from a browser. The API has no
 # authentication, so allowing every origin would let any website arm, disarm
-# or delete recordings.
-DEFAULT_CORS_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000"
-CORS_ORIGINS = [
-    origin.strip()
-    for origin in os.getenv("LENSFORT_CORS_ORIGINS", DEFAULT_CORS_ORIGINS).split(",")
-    if origin.strip()
-]
-
+# or delete recordings. Set LENSFORT_CORS_ORIGINS to change the list.
 app = Flask(__name__)
 CORS(app, origins=CORS_ORIGINS)
 
@@ -241,8 +234,4 @@ def delete_recording(filename):
     return jsonify(message="Recording deleted", filename=safe_name), 200
 
 if __name__ == "__main__":
-    # Bind to localhost by default; the API has no authentication. Set
-    # LENSFORT_HOST=0.0.0.0 to deliberately expose it on the local network.
-    host = os.getenv("LENSFORT_HOST", "127.0.0.1")
-    port = int(os.getenv("LENSFORT_PORT", "5000"))
-    app.run(host=host, port=port)
+    app.run(host=HOST, port=PORT)
