@@ -3,7 +3,6 @@ import Sidebar from './Sidebar';
 import ArmControl from './ArmControl';
 import RecordingsPage from './RecordingsPage';
 import Details from './Details';
-import './index.css';
 
 function App() {
   return (
