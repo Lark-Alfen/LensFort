@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 import pytest
@@ -43,6 +44,53 @@ def test_save_locally_keeps_clip_when_processing_fails(local_dir, tmp_path_facto
     assert saved.endswith("01-02-25-10-00-00.mp4")
     assert (local_dir / "01-02-25-10-00-00.mp4").exists()
     assert not clip.exists()
+
+
+class FakeFfmpegStream:
+    outputs = []
+
+    def output(self, path, **kwargs):
+        self.outputs.append(path)
+        self.path = path
+        return self
+
+    def overwrite_output(self):
+        return self
+
+    def run(self, quiet=False):
+        with open(self.path, "wb") as f:
+            f.write(b"\x01")
+
+
+def test_save_locally_processes_outside_library(local_dir, tmp_path_factory, monkeypatch):
+    temp_dir = tmp_path_factory.mktemp("videos")
+    clip = make_recording(temp_dir, "01-02-25-10-00-00.mp4")
+    FakeFfmpegStream.outputs = []
+    monkeypatch.setattr(storage.ffmpeg, "input", lambda path: FakeFfmpegStream())
+
+    storage.save_locally(str(clip))
+
+    [output] = FakeFfmpegStream.outputs
+    assert os.path.dirname(output) == str(temp_dir)
+    assert [p.name for p in local_dir.iterdir()] == ["01-02-25-10-00-00.mp4"]
+    assert (local_dir / "01-02-25-10-00-00.mp4").read_bytes() == b"\x01"
+    assert list(temp_dir.iterdir()) == []
+
+
+def test_recover_pending_clips_discards_incomplete_outputs(local_dir, tmp_path_factory, monkeypatch):
+    temp_dir = tmp_path_factory.mktemp("videos")
+    make_recording(temp_dir, "01-02-25-10-00-00.mp4")
+    make_recording(temp_dir, "01-02-25-09-00-00-out.mp4")
+    make_recording(local_dir, "01-02-25-08-00-00-out.mp4")
+    make_recording(local_dir, "01-02-25-07-00-00.mp4")
+    recovered = []
+    monkeypatch.setattr(storage, "handle_detection", recovered.append)
+
+    assert storage.recover_pending_clips(str(temp_dir)) == 1
+
+    assert [os.path.basename(p) for p in recovered] == ["01-02-25-10-00-00.mp4"]
+    assert [p.name for p in temp_dir.iterdir()] == ["01-02-25-10-00-00.mp4"]
+    assert [p.name for p in local_dir.iterdir()] == ["01-02-25-07-00-00.mp4"]
 
 
 def test_config_number_validation(monkeypatch):
