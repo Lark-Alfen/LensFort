@@ -7,7 +7,6 @@ from recordings import parse_recording_time
 from flask_cors import CORS
 from flask import Flask, jsonify, request, send_from_directory
 import os
-import mimetypes
 from datetime import datetime, timedelta
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
