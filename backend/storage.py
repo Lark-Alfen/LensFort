@@ -16,6 +16,9 @@ LOCAL_DIRECTORY = os.path.join(BASE_DIR, 'local_videos')
 # Ensure the directory exists
 os.makedirs(LOCAL_DIRECTORY, exist_ok=True)
 
+# Suffix of ffmpeg's output while a clip is being processed.
+PROCESSING_SUFFIX = "-out.mp4"
+
 def save_locally(path_to_file):
     if not path_to_file or not os.path.exists(path_to_file):
         return None
@@ -25,8 +28,9 @@ def save_locally(path_to_file):
     local_filename = os.path.basename(path_to_file)
     local_path = os.path.join(LOCAL_DIRECTORY, local_filename)
 
-    # Process the video (resize, etc.) before saving.
-    output_path = os.path.splitext(local_path)[0] + "-out.mp4"
+    # Process the video (resize, etc.) next to the temporary clip, so a
+    # half-written file never shows up in the recordings library.
+    output_path = os.path.splitext(path_to_file)[0] + PROCESSING_SUFFIX
     try:
         ffmpeg.input(path_to_file).output(output_path, vf='scale=-1:720').overwrite_output().run(quiet=True)
         os.replace(output_path, local_path)
@@ -62,11 +66,14 @@ def recover_pending_clips(temp_directory):
     """Finalize clips left in the temp directory by a previous run.
 
     Must only be called before the camera starts recording, otherwise an
-    in-progress clip could be picked up.
+    in-progress clip could be picked up. Incomplete ffmpeg outputs are
+    deleted, including ones older versions left in the recordings library.
     """
+    _remove_incomplete_outputs(LOCAL_DIRECTORY)
     if not os.path.isdir(temp_directory):
         return 0
 
+    _remove_incomplete_outputs(temp_directory)
     pending = [
         os.path.join(temp_directory, name)
         for name in os.listdir(temp_directory)
@@ -76,6 +83,16 @@ def recover_pending_clips(temp_directory):
         logger.info("Recovering unfinished clip %s", os.path.basename(path))
         handle_detection(path)
     return len(pending)
+
+def _remove_incomplete_outputs(directory):
+    for name in os.listdir(directory):
+        if not name.endswith(PROCESSING_SUFFIX):
+            continue
+        try:
+            os.remove(os.path.join(directory, name))
+            logger.info("Removed incomplete processed clip %s", name)
+        except OSError as exc:
+            logger.warning("Could not remove incomplete clip %s: %s", name, exc)
 
 def purge_old_recordings(retention_days, now=None):
     """Delete recordings whose detection time is older than retention_days.
