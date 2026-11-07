@@ -59,3 +59,23 @@ def test_config_number_validation(monkeypatch):
 
     monkeypatch.delenv("LENSFORT_TEST_VALUE")
     assert config._read_number("LENSFORT_TEST_VALUE", 3, int) == 3
+
+
+def test_config_choice_validation(monkeypatch):
+    levels = ("DEBUG", "INFO")
+    monkeypatch.setenv("LENSFORT_TEST_VALUE", " debug ")
+    assert config._read_choice("LENSFORT_TEST_VALUE", "INFO", levels) == "DEBUG"
+
+    monkeypatch.setenv("LENSFORT_TEST_VALUE", "VERBOSE")
+    with pytest.raises(ValueError, match="LENSFORT_TEST_VALUE must be one of DEBUG, INFO"):
+        config._read_choice("LENSFORT_TEST_VALUE", "INFO", levels)
+
+    monkeypatch.setenv("LENSFORT_TEST_VALUE", "")
+    assert config._read_choice("LENSFORT_TEST_VALUE", "INFO", levels) == "INFO"
+
+
+@pytest.mark.parametrize("raw", ["50o0", "0", "70000"])
+def test_config_rejects_invalid_port(monkeypatch, raw):
+    monkeypatch.setenv("LENSFORT_PORT", raw)
+    with pytest.raises(ValueError, match="LENSFORT_PORT"):
+        config._read_number("LENSFORT_PORT", 5000, int, minimum=1, maximum=65535)
